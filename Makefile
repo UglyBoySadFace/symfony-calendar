@@ -16,52 +16,39 @@ default: help
 # CORE DEVELOPMENT COMMANDS
 #================================
 
-## install: Install/Update all dependencies and refresh the environment.
 .PHONY: install
-install: composer-install db-reset
+install: composer-install db-reset ## Install/Update all dependencies and refresh the environment.
 
-## up: Start the Docker environment in detached mode.
 .PHONY: up
-up:
+up: ## Start the Docker environment in detached mode.
 	@echo "Starting Docker environment..."
-	@docker compose up -d --wait
+	@docker compose up -d
 
-## down: Stop and remove all containers.
 .PHONY: down
-down:
+down: ## Stop and remove all containers.
 	@echo "Stopping and removing Docker containers..."
 	@docker compose down --remove-orphans
 
-## logs: View combined logs for all services.
 .PHONY: logs
-logs:
+logs: ## View combined logs for all services.
 	@docker compose logs -f
-
-.PHONY: sync-fork
-sync-fork:
-	@echo "Syncing fork with upstream..."
-	@curl -sSL https://raw.githubusercontent.com/coopTilleuls/template-sync/main/template-sync.sh | sh -s -- https://github.com/api-platform/api-platform
-	@echo "Fork synced. Please review changes and commit git cherry-pick --continue if necessary."
 
 #================================
 # COMPOSER & DEPENDENCY MANAGEMENT
 #================================
 
-## composer-install: Install dependencies using the lock file.
 .PHONY: composer-install
-composer-install:
+composer-install: ## Install dependencies using the lock file.
 	@echo "Running Composer install..."
 	@docker compose exec $(DOCKER_PHP_SERVICE) $(COMPOSER_BIN) install
 
-## composer-update: Update dependencies and regenerate the lock file.
 .PHONY: composer-update
-composer-update:
+composer-update: ## Update dependencies and regenerate the lock file.
 	@echo "Running Composer update (will regenerate lock file)..."
 	@docker compose exec $(DOCKER_PHP_SERVICE) $(COMPOSER_BIN) update
 
-## composer-require {package}: Add a new dependency. Usage: make composer-require package=ramsey/uuid
 .PHONY: composer-require
-composer-require:
+composer-require: ## Add a new dependency. Usage: make composer-require package=ramsey/uuid
 	@if [ -z "$(package)" ]; then echo "Usage: make composer-require package=vendor/package"; exit 1; fi
 	@echo "Requiring package $(package)..."
 	@docker compose exec $(DOCKER_PHP_SERVICE) $(COMPOSER_BIN) require $(package)
@@ -70,15 +57,13 @@ composer-require:
 # DOCTRINE & DATABASE
 #================================
 
-## db-migrate: Execute pending Doctrine migrations.
 .PHONY: db-migrate
-db-migrate:
+db-migrate: ## Execute pending Doctrine migrations.
 	@echo "Running Doctrine migrations..."
 	@docker compose exec $(DOCKER_PHP_SERVICE) bin/console doctrine:migrations:migrate --no-interaction
 
-## db-reset: Drop, create, migrate, and load fixtures (FULL DB RESET).
 .PHONY: db-reset
-db-reset:
+db-reset: ## Drop, create, migrate, and load fixtures (FULL DB RESET).
 	@echo "Performing FULL database reset..."
 	@docker compose exec $(DOCKER_PHP_SERVICE) bin/console doctrine:database:drop --force --if-exists
 	@docker compose exec $(DOCKER_PHP_SERVICE) bin/console doctrine:database:create
@@ -89,21 +74,18 @@ db-reset:
 # API PLATFORM & SYMFONY
 #================================
 
-## cache-clear: Clear the Symfony cache.
 .PHONY: cache-clear
-cache-clear:
+cache-clear: ## Clear the Symfony cache.
 	@echo "Clearing Symfony cache..."
 	@docker compose exec $(DOCKER_PHP_SERVICE) bin/console cache:clear
 
-## test: Run PHPUnit tests.
 .PHONY: test
-test:
+test: ## Run PHPUnit tests.
 	@echo "Running PHPUnit tests..."
 	@docker compose exec $(DOCKER_PHP_SERVICE) bin/phpunit
 
-## lint: Run Symfony linter and basic checks.
 .PHONY: lint
-lint:
+lint: ## Run Symfony linter and basic checks.
 	@echo "Running Symfony linting..."
 	@docker compose exec $(DOCKER_PHP_SERVICE) bin/console lint:yaml config
 	@docker compose exec $(DOCKER_PHP_SERVICE) bin/console lint:twig templates
@@ -113,7 +95,7 @@ lint:
 #================================
 
 .PHONY: help
-help:
+help: ## Show this help message.
 	@echo ""
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
